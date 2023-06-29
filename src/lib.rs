@@ -52,9 +52,9 @@ struct Clipboard {
 }
 
 impl imgui::ClipboardBackend for Clipboard {
-    fn set(&mut self, s:&str) {
+    fn set(&mut self, s: &str) {
         unsafe {
-            glfw::ffi::glfwSetClipboardString(self.window_ptr, s.as_ptr());
+            glfw::ffi::glfwSetClipboardString(self.window_ptr, s.as_ptr() as *const i8);
         }
     }
     fn get(&mut self) -> std::option::Option<String> {
@@ -64,7 +64,7 @@ impl imgui::ClipboardBackend for Clipboard {
             let bytes = s.to_bytes();
             if !bytes.is_empty() {
                 let v = String::from_utf8_lossy(bytes);
-                Some(imgui::ImString::new(v))
+                Some(imgui::ImString::new(v).to_string())
             } else {
                 None
             }
@@ -109,7 +109,7 @@ impl GlfwPlatform {
         io[Key::Space] = GlfwKey::Space as _;
         io[Key::Enter] = GlfwKey::Enter as _;
         io[Key::Escape] = GlfwKey::Escape as _;
-        io[Key::KeyPadEnter] = GlfwKey::KpEnter as _;
+        io[Key::Enter] = GlfwKey::KpEnter as _;
         io[Key::A] = GlfwKey::A as _;
         io[Key::C] = GlfwKey::C as _;
         io[Key::V] = GlfwKey::V as _;
@@ -119,7 +119,7 @@ impl GlfwPlatform {
         imgui.set_platform_name(Some(ImString::from(format!(
             "imgui-glfw-support {}",
             env!("CARGO_PKG_VERSION")
-        ))));
+        )).to_string()));
         GlfwPlatform {
             hidpi_mode: ActiveHiDpiMode::Default,
             hidpi_factor: 1.0,
@@ -132,7 +132,7 @@ impl GlfwPlatform {
     pub unsafe fn set_clipboard_backend(&self, imgui: &mut Context, window: &Window) {
         use glfw::Context;
         let window_ptr = window.window_ptr();
-        imgui.set_clipboard_backend(Box::new(Clipboard { window_ptr }));
+        imgui.set_clipboard_backend(Clipboard { window_ptr });
     }
 
     /// Attaches the platform instance to a glfw window.
